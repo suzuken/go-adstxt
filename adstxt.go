@@ -77,8 +77,10 @@ func Parse(in io.Reader) ([]Record, error) {
 	records := make([]Record, 0)
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
+		text := scanner.Text()
+
 		// comment out
-		if []rune(scanner.Text())[0] == '#' {
+		if []rune(text)[0] == '#' || strings.Index(text, "contact=") == 0 {
 			continue
 		}
 		r, err := parseRow(scanner.Text())
