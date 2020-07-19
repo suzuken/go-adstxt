@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -44,10 +45,10 @@ func Get(rawurl string) ([]Record, error) {
 }
 
 func parseAccountType(s string) AccountType {
-	switch s {
-	case "Direct", "DIRECT":
+	switch strings.ToUpper(s) {
+	case "DIRECT":
 		return AccountDirect
-	case "Reseller", "RESELLER":
+	case "RESELLER":
 		return AccountReseller
 	default:
 		// NOTE or should be error ?
@@ -55,22 +56,43 @@ func parseAccountType(s string) AccountType {
 	}
 }
 
-func parseRow(row string) (Record, error) {
-	fields := strings.Split(row, ",")
-	if len := len(fields); len != 3 && len != 4 {
-		return Record{}, fmt.Errorf("ads.txt has fields length is incorrect.: %s", row)
+var leadingBlankRe = regexp.MustCompile(`\A[\s\t]+`)
+var trailingBlankRe = regexp.MustCompile(`[\s\t]+\z`)
+
+func normalize(s string) string {
+	// sanitize blank characters
+	s = leadingBlankRe.ReplaceAllString(s, "")
+	s = trailingBlankRe.ReplaceAllString(s, "")
+	return s
+}
+
+func parseRow(row string) (*Record, error) {
+	// dropping extension field
+	if idx := strings.Index(row, ";"); idx != -1 {
+		row = row[0:idx]
 	}
 
-	var r Record
-	r.ExchangeDomain = fields[0]
-	r.PublisherAccountID = fields[1]
-	r.AccountType = parseAccountType(fields[2])
+	fields := strings.Split(row, ",")
 
+	// if the first field contains "=", then the row is for key-value definitions
+	if strings.Index(fields[0], "=") != -1 {
+		return nil, nil
+	}
+
+	if l := len(fields); l != 3 && l != 4 {
+		return nil, fmt.Errorf("ads.txt has fields length is incorrect.: %s", row)
+	}
+
+	// otherwise the row is valid
+	var r Record
+	r.ExchangeDomain = normalize(fields[0])
+	r.PublisherAccountID = normalize(fields[1])
+	r.AccountType = parseAccountType(normalize(fields[2]))
 	// AuthorityID is optional
 	if len(fields) >= 4 {
-		r.AuthorityID = fields[3]
+		r.AuthorityID = normalize(fields[3])
 	}
-	return r, nil
+	return &r, nil
 }
 
 func Parse(in io.Reader) ([]Record, error) {
@@ -79,15 +101,24 @@ func Parse(in io.Reader) ([]Record, error) {
 	for scanner.Scan() {
 		text := scanner.Text()
 
-		// comment out
-		if []rune(text)[0] == '#' || strings.Index(text, "contact=") == 0 {
+		// blank line
+		if len(text) == 0 {
 			continue
 		}
+
+		// comment out
+		if []rune(text)[0] == '#' {
+			continue
+		}
+
+		// otherwise try parsing
 		r, err := parseRow(scanner.Text())
 		if err != nil {
 			return nil, err
 		}
-		records = append(records, r)
+		if r != nil {
+			records = append(records, *r)
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err

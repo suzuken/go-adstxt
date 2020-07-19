@@ -39,6 +39,23 @@ func TestParseAdstxt(t *testing.T) {
 			},
 		},
 		{
+			txt: "\n\nexample.com, 1, direct, TAG ID1; COMMENT1\n\nexample.org , \t2 , \treseller , \tTAG ID2 ; \tCOMMENT2\n\nfoo=bar",
+			expected: []adstxt.Record{
+				{
+					ExchangeDomain:     "example.com",
+					PublisherAccountID: "1",
+					AccountType:        adstxt.AccountDirect,
+					AuthorityID:        "TAG ID1",
+				},
+				{
+					ExchangeDomain:     "example.org",
+					PublisherAccountID: "2",
+					AccountType:        adstxt.AccountReseller,
+					AuthorityID:        "TAG ID2",
+				},
+			},
+		},
+		{
 			txt: "# comment out\nexample.com,1,DIRECT",
 			expected: []adstxt.Record{
 				{
