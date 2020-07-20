@@ -2,11 +2,8 @@
 package adstxt
 
 import (
-	"bufio"
-	"fmt"
 	"io"
 	"net/http"
-	"strings"
 )
 
 // Record is ads.txt data field defined in iab.
@@ -43,54 +40,23 @@ func Get(rawurl string) ([]Record, error) {
 	return Parse(resp.Body)
 }
 
-func parseAccountType(s string) AccountType {
-	switch s {
-	case "Direct", "DIRECT":
-		return AccountDirect
-	case "Reseller", "RESELLER":
-		return AccountReseller
-	default:
-		// NOTE or should be error ?
-		return AccountOther
-	}
-}
-
-func parseRow(row string) (Record, error) {
-	fields := strings.Split(row, ",")
-	if len := len(fields); len != 3 && len != 4 {
-		return Record{}, fmt.Errorf("ads.txt has fields length is incorrect.: %s", row)
-	}
-
-	var r Record
-	r.ExchangeDomain = fields[0]
-	r.PublisherAccountID = fields[1]
-	r.AccountType = parseAccountType(fields[2])
-
-	// AuthorityID is optional
-	if len(fields) >= 4 {
-		r.AuthorityID = fields[3]
-	}
-	return r, nil
-}
-
 func Parse(in io.Reader) ([]Record, error) {
 	records := make([]Record, 0)
-	scanner := bufio.NewScanner(in)
-	for scanner.Scan() {
-		text := scanner.Text()
+	p := NewParser(in)
 
-		// comment out
-		if []rune(text)[0] == '#' || strings.Index(text, "contact=") == 0 {
-			continue
+LOOP:
+	for {
+		r, err := p.Parse()
+		if err == io.EOF {
+			break LOOP
 		}
-		r, err := parseRow(scanner.Text())
 		if err != nil {
 			return nil, err
 		}
-		records = append(records, r)
+		if r != nil {
+			records = append(records, *r)
+		}
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
+
 	return records, nil
 }
