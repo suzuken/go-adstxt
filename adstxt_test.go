@@ -39,7 +39,7 @@ func TestParseAdstxt(t *testing.T) {
 			},
 		},
 		{
-			txt: "\n\nexample.com, 1, direct, TAG ID1; COMMENT1\n\nexample.org , \t2 , \treseller , \tTAG ID2 ; \tCOMMENT2\n\nfoo=bar",
+			txt: "\n\nEXAMPLE.COM, 1, direct, TAG ID1; COMMENT1\n\nEXAMPLE.ORG , \t2 , \treseller , \tTAG ID2 ; \tCOMMENT2\n\nfoo=bar",
 			expected: []adstxt.Record{
 				{
 					ExchangeDomain:     "example.com",
