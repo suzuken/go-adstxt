@@ -56,7 +56,7 @@ func TestParseAdstxt(t *testing.T) {
 			},
 		},
 		{
-			txt: "# comment out\nexample.com,1,DIRECT",
+			txt: "# comment.out,comment-publisher,DIRECT\nexample.com,1,DIRECT",
 			expected: []adstxt.Record{
 				{
 					ExchangeDomain:     "example.com",
@@ -65,15 +65,32 @@ func TestParseAdstxt(t *testing.T) {
 				},
 			},
 		},
+		{
+			txt: "example.com,1,DIRECT# trailing comment\nexample.com,2,RESELLER###trailing comment",
+			expected: []adstxt.Record{
+				{
+					ExchangeDomain:     "example.com",
+					PublisherAccountID: "1",
+					AccountType:        adstxt.AccountDirect,
+				},
+				{
+					ExchangeDomain:     "example.com",
+					PublisherAccountID: "2",
+					AccountType:        adstxt.AccountReseller,
+				},
+			},
+		},
 	}
 
-	for i, c := range cases {
-		record, err := adstxt.Parse(strings.NewReader(c.txt))
-		if err != nil {
-			t.Errorf("(#%d) parse ads.txt failed: %s", i, err)
-		}
-		if !reflect.DeepEqual(c.expected, record) {
-			t.Errorf("want %v, got %v", c.expected, record)
-		}
+	for _, c := range cases {
+		t.Run(c.txt, func(t *testing.T) {
+			record, err := adstxt.Parse(strings.NewReader(c.txt))
+			if err != nil {
+				t.Errorf("parse ads.txt failed: %s", err)
+			}
+			if !reflect.DeepEqual(c.expected, record) {
+				t.Errorf("want %v, got %v", c.expected, record)
+			}
+		})
 	}
 }

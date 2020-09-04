@@ -24,13 +24,13 @@ func (p *Parser) Parse() (*Record, error) {
 	for p.scanner.Scan() {
 		text := p.scanner.Text()
 
-		// blank line
-		if len(text) == 0 {
-			continue
+		// remove comment
+		if idx := strings.IndexRune(text, '#'); idx >= 0 {
+			text = text[0:idx]
 		}
 
-		// comment out
-		if []rune(text)[0] == '#' {
+		// blank line
+		if len(text) == 0 {
 			continue
 		}
 
