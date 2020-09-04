@@ -56,7 +56,7 @@ func TestParseAdstxt(t *testing.T) {
 			},
 		},
 		{
-			txt: "# comment out\nexample.com,1,DIRECT",
+			txt: "# comment.out,comment-publisher,DIRECT\nexample.com,1,DIRECT",
 			expected: []adstxt.Record{
 				{
 					ExchangeDomain:     "example.com",
