@@ -22,7 +22,7 @@ func NewParser(r io.Reader) *Parser {
 func (p *Parser) Parse() (*Record, error) {
 	// scans for the first valid row or returns an error otherwise
 	for p.scanner.Scan() {
-		text := p.scanner.Text()
+		text := strings.TrimSpace(p.scanner.Text())
 
 		// remove comment
 		if idx := strings.IndexRune(text, '#'); idx >= 0 {
