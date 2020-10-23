@@ -80,6 +80,21 @@ func TestParseAdstxt(t *testing.T) {
 				},
 			},
 		},
+		{
+			txt: "example.com,1,DIRECT\n      \nexample.com,2,RESELLER",
+			expected: []adstxt.Record{
+				{
+					ExchangeDomain:     "example.com",
+					PublisherAccountID: "1",
+					AccountType:        adstxt.AccountDirect,
+				},
+				{
+					ExchangeDomain:     "example.com",
+					PublisherAccountID: "2",
+					AccountType:        adstxt.AccountReseller,
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
